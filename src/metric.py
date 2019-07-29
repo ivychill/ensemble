@@ -1,6 +1,6 @@
-# coding=utf-8
-import os
+
 import numpy as np
+from log import logger
 
 
 def get_distance(x1, x2):
@@ -13,14 +13,13 @@ def get_distance(x1, x2):
         d = x1 - x2
     return np.round(np.dot(d, d.T), 3)
 
-
 def calculate_accuracy(threshold, distList, actual_issameList):
     predict_issame = np.less(distList, threshold)
     tp = np.sum(np.logical_and(predict_issame, actual_issameList))
     fp = np.sum(np.logical_and(predict_issame, np.logical_not(actual_issameList)))
     tn = np.sum(np.logical_and(np.logical_not(predict_issame), np.logical_not(actual_issameList)))
     fn = np.sum(np.logical_and(np.logical_not(predict_issame), actual_issameList))
-
+    # logger.debug('th: %d, same: %d, tp: %d, fp: %d, tn: %d, fn: %d' % (len(distList), len(actual_issameList), tp, fp, tn, fn))
     tpr = 0 if (tp + fn == 0) else float(tp) / float(tp + fn)
     recall = tpr
     fpr = 0 if (fp + tn == 0) else float(fp) / float(fp + tn)
@@ -29,7 +28,7 @@ def calculate_accuracy(threshold, distList, actual_issameList):
 
     tnr =  0 if (tn + fp == 0) else float(tn) / float(tn + fp)
     fnr =  0 if (tp + fn == 0) else float(fn) / float(tp + fn)
-    return recall, precision, acc, tnr, fpr,fnr
+    return recall, precision, acc, tnr, fpr, fnr
 
 # def evaluate(embeddings, actual_issame, nrof_folds=10):
 #     # Calculate evaluation metrics

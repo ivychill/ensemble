@@ -3,14 +3,10 @@ import argparse
 import os.path
 import sys
 from datetime import datetime
-from itertools import combinations
-import numpy as np
 from numpy.random import seed
-import matplotlib
-from sklearn import metrics
 import GPy
 import GPyOpt
-import dataset
+import xlwt
 from dataset import Dataset
 from metric import *
 from log import *
@@ -18,30 +14,45 @@ from log import *
 
 # objective function
 def accuracy(parameters):
-    weight = parameters[:, 0]
-    threshold = parameters[:, 1]
+    global row
+    weight = parameters[:, 0][0]
+    threshold = parameters[:, 1][0]
+    logger.debug("parameters: %s, type: %s" % (parameters, type(parameters)))
     logger.debug("weight: %f, threshold: %f" % (weight, threshold))
-    # emb_dir_triplet = os.path.join(os.path.expanduser(args.emb_dir), 'triplet')
-    # emb_dir_arc = os.path.join(os.path.expanduser(args.emb_dir), 'arc')
-    # dataset_triplet = Dataset(emb_dir_triplet)
-    # dataset_arc = Dataset(emb_dir_arc)
-    dataset = Dataset(args.emb_dir)
-    distances_and_issames = dataset.distances_and_issame_list
-    logger('distances_and_issames: %s' % (distances_and_issames))
+
     distance_list = []
     issame_list = []
-    for distances_and_issame in distances_and_issames:
+    for distances_and_issame in dataset.distances_and_issame_list:
         distance = distances_and_issame[0] * weight + distances_and_issame[1] * (1 - weight)
         issame = distances_and_issame[2]
         distance_list.append(distance)
         issame_list.append(issame)
 
-    accuracy = calculate_accuracy(threshold, distance_list, issame_list)
-    logger.debug('accuracy: %f' % (accuracy))
-    return accuracy
+    # logger.debug("construction of distances and issame finish...")
+    recall, precision, acc, tnr, fpr, fnr = calculate_accuracy(threshold, np.asarray(distance_list), np.asarray(issame_list))
+    logger.debug('accuracy: %f' % (acc))
+    with open(os.path.join(log_dir, 'result.txt'),'at') as f:
+        f.write('%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\n' % (weight, threshold, acc, precision, fpr, precision, tnr, fnr))
 
+    list_data = [weight, threshold, acc, precision, fpr, precision, tnr, fnr]
+    for i_1 in range(len(list_data)):
+        sheet_1.write(row, i_1, list_data[i_1])
+    xls_file.save(path_excel)
+    row += 1
+
+    return acc
 
 def main():
+    global row
+    with open(os.path.join(log_dir, 'train_result.txt'),'at') as f:
+        f.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % ('weight', 'threshold', 'acc', 'recall', 'fpr', 'precision', 'tnr', 'fnr'))
+
+    sheet_title = ['weight', 'threshold', 'acc', 'recall', 'fpr', 'precision', 'tnr', 'fnr']
+    for i_sheet in range(len(sheet_title)):
+        sheet_1.write(row, i_sheet, sheet_title[i_sheet])
+    xls_file.save(path_excel)
+    row += 1
+
     bounds = [{'name': 'weight', 'type': 'continuous', 'domain': (0,1)},
               {'name': 'threshold', 'type': 'continuous', 'domain': (0,4)}]
 
@@ -53,7 +64,7 @@ def main():
                                      exact_feval=True,
                                      maximize=True)
 
-    optimizer.run_optimization(max_iter=100)
+    optimizer.run_optimization(max_iter=1024)
     print('plot_acquisition')
     optimizer.plot_acquisition()
     print('plot_convergence')
@@ -77,4 +88,11 @@ if __name__ == '__main__':
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     set_logger(logger, log_dir)
+    dataset = Dataset(args.emb_dir)
+
+    path_excel=os.path.join(log_dir, 'train_result.xls')
+    xls_file = xlwt.Workbook()
+    sheet_1 = xls_file.add_sheet('sheet_1', cell_overwrite_ok=True)
+    row = 0
+    seed(123)
     main()

@@ -1,12 +1,12 @@
-# coding=utf-8
-import os
-import numpy as np
-from itertools import combinations, product
-from log import logger
-from metric import *
 
-MAX_POSITIVE_NUM = 10e5
-MAX_NEGATIVE_NUM = 10e6
+from metric import *
+import os
+from itertools import combinations, product
+import numpy as np
+
+
+# MAX_POSITIVE_NUM = 10e5
+# MAX_NEGATIVE_NUM = 10e6
 
 class Dataset(object):
     # def __init__(self, emb_dir):
@@ -14,12 +14,13 @@ class Dataset(object):
     #     self.embeddings_and_labels()
     #     self.validation_dataset()
 
-    def __init__(self, emb_dir):
-        self.validation_dataset_from_path(emb_dir)
+    def __init__(self, emb_dir, max_positive_sample=None, max_negative_sample=None):
+        self.validation_dataset_from_path(emb_dir, max_positive_sample, max_negative_sample)
         self.distances_and_issame()
 
     # return [((model1_emb1, model2_emb2), (model2_emb1, model2_emb2), issame)...]
-    def validation_dataset_from_path(self, emb_dir):
+    def validation_dataset_from_path(self, emb_dir, max_positive_sample, max_negative_sample):
+        logger.info("construct pairs...")
         emb_dir_triplet = os.path.join(emb_dir, 'triplet')
         emb_dir_arc = os.path.join(emb_dir, 'arc')
         dirs = os.listdir(emb_dir_triplet)
@@ -38,6 +39,10 @@ class Dataset(object):
             positive_pairs_arc = list(combinations(embeddings_arc, 2))
             positive_pairs_merge = map(lambda x, y: (x, y, True), positive_pairs_triplet, positive_pairs_arc)
             self.positive_pairs.extend(positive_pairs_merge)
+            positive_size =  len(self.positive_pairs)
+            if max_positive_sample is not None and positive_size > max_positive_sample:
+                logger.debug('positive sample size: %d' % (positive_size))
+                break
 
         # construct negative pairs
         self.negative_pairs = []
@@ -61,13 +66,21 @@ class Dataset(object):
             negative_pairs_arc = list(product(embeddings_arc_0, embeddings_arc_1))
             negative_pairs_merge = map(lambda x, y: (x, y, False), negative_pairs_triplet, negative_pairs_arc)
             self.negative_pairs.extend(negative_pairs_merge)
+            negative_size =  len(self.negative_pairs)
+            if max_negative_sample is not None and negative_size > max_negative_sample:
+                logger.debug('negative sample size: %d' % (max_negative_sample))
+                break
 
         self.all_pairs = []
         self.all_pairs.extend(self.positive_pairs)
         self.all_pairs.extend(self.negative_pairs)
 
+    def validation_dataset_below(self, max_positive_sample, max_negative_sample):
+        pass
+
     # return [(model1_distance, model2_distance, issame)...]
     def distances_and_issame(self):
+        logger.info("construct distances...")
         self.distances_and_issame_list = []
         for pair in self.all_pairs:
             distance_triplet = get_distance(pair[0][0], pair[0][1])
@@ -76,43 +89,43 @@ class Dataset(object):
             distances_and_issame = (distance_triplet, distance_arc, issame)
             self.distances_and_issame_list.append(distances_and_issame)
 
-    def validation_dataset_from_config(self, args):
-        pass
-
-    def embeddings_and_labels(self):
-        embeddings =  np.load(os.path.join(self.emb_dir, "signatures.npy"))
-        labels = np.load(os.path.join(self.emb_dir, "labels_name.npy"))
-        assert len(embeddings) == len(labels)  # 样本数和标签数要相等
-        embeddings = np.array(embeddings)
-        labels = np.array(labels).reshape(-1,1)
-        embeddings_and_labels = np.hstack((labels, embeddings))
-        self.all_pairs = list(combinations(embeddings_and_labels, 2))
-        np.random.shuffle(self.all_pairs)
-
-    def validation_dataset(self):
-        p_num = 0
-        n_num = 0
-        validation_pairs = []
-        for pair in self.all_pairs:
-            if pair[0][0] == pair[1][0] and p_num < MAX_POSITIVE_NUM:
-                validation_pairs.append(pair)
-                p_num += 1
-            elif pair[0][0] != pair[1][0] and n_num < MAX_NEGATIVE_NUM:
-                validation_pairs.append(pair)
-                n_num += 1
-            elif p_num == MAX_POSITIVE_NUM and n_num == MAX_NEGATIVE_NUM:
-                break
-        logger.debug ('positive: %d, negative: %d' % (p_num, n_num))
-
-        self.distance_list = []
-        self.issame_list = []
-        for pair in validation_pairs:
-            ground_truth_issame = True
-            if pair[0][0] != pair[1][0]:
-                actual_issame = False
-            dist = get_distance(pair[0][1:], pair[1][1:])
-            self.distance_list.append(dist)
-            self.issame_list.append(ground_truth_issame)
+    # def validation_dataset_from_config(self, args):
+    #     pass
+    #
+    # def embeddings_and_labels(self):
+    #     embeddings =  np.load(os.path.join(self.emb_dir, "signatures.npy"))
+    #     labels = np.load(os.path.join(self.emb_dir, "labels_name.npy"))
+    #     assert len(embeddings) == len(labels)
+    #     embeddings = np.array(embeddings)
+    #     labels = np.array(labels).reshape(-1,1)
+    #     embeddings_and_labels = np.hstack((labels, embeddings))
+    #     self.all_pairs = list(combinations(embeddings_and_labels, 2))
+    #     np.random.shuffle(self.all_pairs)
+    #
+    # def validation_dataset(self):
+    #     p_num = 0
+    #     n_num = 0
+    #     validation_pairs = []
+    #     for pair in self.all_pairs:
+    #         if pair[0][0] == pair[1][0] and p_num < MAX_POSITIVE_NUM:
+    #             validation_pairs.append(pair)
+    #             p_num += 1
+    #         elif pair[0][0] != pair[1][0] and n_num < MAX_NEGATIVE_NUM:
+    #             validation_pairs.append(pair)
+    #             n_num += 1
+    #         elif p_num == MAX_POSITIVE_NUM and n_num == MAX_NEGATIVE_NUM:
+    #             break
+    #     logger.debug ('positive: %d, negative: %d' % (p_num, n_num))
+    #
+    #     self.distance_list = []
+    #     self.issame_list = []
+    #     for pair in validation_pairs:
+    #         ground_truth_issame = True
+    #         if pair[0][0] != pair[1][0]:
+    #             actual_issame = False
+    #         dist = get_distance(pair[0][1:], pair[1][1:])
+    #         self.distance_list.append(dist)
+    #         self.issame_list.append(ground_truth_issame)
 
     # def batch_gen(self, data, batch_size):
     #     data_size = len(data)
