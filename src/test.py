@@ -13,10 +13,12 @@ from log import *
 # objective function
 def accuracy(threshold):
     global row
-    # parameters = np.array([[0.23319, 1.10544]])
-    # parameters = np.array([[0.39402, 0.97591]])
+    # parameters = np.array([[0.23319, 1.10544]])   # xiongma
+    # parameters = np.array([[0.39402, 0.97591]])   # helmet
+    # parameters = np.array([[0.517212, 1.137988]]) # lfw
     # weight = 0.23319
-    weight = 0.39402
+    # weight = 0.39402
+    weight = 0.517212
     distance_list = []
     issame_list = []
     for distances_and_issame in dataset.distances_and_issame_list:
@@ -28,10 +30,10 @@ def accuracy(threshold):
     # logger.debug("construction of distances and issame finish...")
     recall, precision, acc, tnr, fpr, fnr = calculate_accuracy(threshold, np.asarray(distance_list), np.asarray(issame_list))
     logger.debug('accuracy: %f' % (acc))
-    with open(os.path.join(log_dir, 'result.txt'),'at') as f:
-        f.write('%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\n' % (weight, threshold, acc, precision, fpr, precision, tnr, fnr))
+    with open(os.path.join(log_dir, 'test_result.txt'),'at') as f:
+        f.write('%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\n' % (weight, threshold, acc, recall, fpr, precision, tnr, fnr))
 
-    list_data = [weight, threshold, acc, precision, fpr, precision, tnr, fnr]
+    list_data = [weight, threshold, acc, recall, fpr, precision, tnr, fnr]
     for i_1 in range(len(list_data)):
         sheet_1.write(row, i_1, list_data[i_1])
     xls_file.save(path_excel)
@@ -50,13 +52,16 @@ def main():
     xls_file.save(path_excel)
     row += 1
 
-    # parameters = np.array([[0.23319, 1.10544]])
-    # parameters = np.array([[0.39402, 0.97591]])
+    # parameters = np.array([[0.23319, 1.10544]])   # xiongma
+    # parameters = np.array([[0.39402, 0.97591]])   # helmet
+    # parameters = np.array([[0.517212, 1.137988]]) # lfw
     # threshold = 1.10544
-    threshold = 0.97591
+    # threshold = 0.97591
+    threshold = 1.137988
+
     accuracy(threshold)
 
-    thresholds = np.arange(0, 3, 0.01)
+    thresholds = np.arange(0.4, 2.0, 0.01)
     for threshold in thresholds:
         accuracy(threshold)
 

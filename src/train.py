@@ -15,8 +15,8 @@ from log import *
 # objective function
 def accuracy(parameters):
     global row
-    weight = parameters[:, 0][0]
-    threshold = parameters[:, 1][0]
+    weight = parameters[0][0]
+    threshold = parameters[0][1]
     logger.debug("parameters: %s, type: %s" % (parameters, type(parameters)))
     logger.debug("weight: %f, threshold: %f" % (weight, threshold))
 
@@ -31,8 +31,8 @@ def accuracy(parameters):
     # logger.debug("construction of distances and issame finish...")
     recall, precision, acc, tnr, fpr, fnr = calculate_accuracy(threshold, np.asarray(distance_list), np.asarray(issame_list))
     logger.debug('accuracy: %f' % (acc))
-    with open(os.path.join(log_dir, 'result.txt'),'at') as f:
-        f.write('%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\n' % (weight, threshold, acc, precision, fpr, precision, tnr, fnr))
+    with open(os.path.join(log_dir, 'train_result.txt'),'at') as f:
+        f.write('%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\n' % (weight, threshold, acc, precision, fpr, precision, tnr, fnr))
 
     list_data = [weight, threshold, acc, precision, fpr, precision, tnr, fnr]
     for i_1 in range(len(list_data)):
@@ -88,7 +88,10 @@ if __name__ == '__main__':
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     set_logger(logger, log_dir)
-    dataset = Dataset(args.emb_dir)
+
+    MAX_POSITIVE_NUM = int(1e5)
+    MAX_NEGATIVE_NUM = int(1e6)
+    dataset = Dataset(args.emb_dir, MAX_POSITIVE_NUM, MAX_NEGATIVE_NUM)
 
     path_excel=os.path.join(log_dir, 'train_result.xls')
     xls_file = xlwt.Workbook()

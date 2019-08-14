@@ -6,13 +6,14 @@ import numpy as np
 import os
 from scipy import misc
 
+
 def parse_arguments(argv):
     parser = argparse.ArgumentParser(description='face model test')
     # general
-    parser.add_argument('--data_dir', type=str, default='/data/liukang/face_data/xiongma_size112/cam_ID/', help='data path')
-    parser.add_argument('--output_dir', type=str, default='/data/liukang/face_data/20190708_test/xiongma/80w_size160/', help='data path')
+    parser.add_argument('--data_dir', type=str, default='/data/dataset/MegaFace/raw/', help='data path')
+    parser.add_argument('--output_dir', type=str, default='/data/dataset/MegaFace/MegaFace_160/', help='data path')
     parser.add_argument('--image_size', default='112,112', help='')
-    parser.add_argument('--model', default='/data/liukang/Project_facenet/insightface-master/recognition/models/80w_arcface_new/r100_arcface_emore,156', help='path to load model.')
+    parser.add_argument('--model', default='/data/fengchen/ensemble/model/model-r100-ii/model,0', help='path to load model.')
     parser.add_argument('--ga_model', default='', help='path to load model.')
     parser.add_argument('--gpu', default=0, type=int, help='gpu id')
     parser.add_argument('--det', default=0, type=int, help='mtcnn option, 1 means using R+O, 0 means detect from begining')

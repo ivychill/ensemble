@@ -26,8 +26,6 @@ def parse_lst_line(line):
   return image_path, label, bbox, landmark, aligned
 
 
-
-
 def read_image(img_path, **kwargs):
   mode = kwargs.get('mode', 'rgb')
   layout = kwargs.get('layout', 'HWC')

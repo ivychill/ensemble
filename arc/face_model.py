@@ -30,7 +30,7 @@ def get_model(ctx, image_size, model_str, layer):
   assert len(_vec)==2
   prefix = _vec[0]
   epoch = int(_vec[1])
-  print('loading',prefix, epoch)
+  print('loading', prefix, epoch)
   sym, arg_params, aux_params = mx.model.load_checkpoint(prefix, epoch)
   all_layers = sym.get_internals()
   sym = all_layers[layer+'_output']

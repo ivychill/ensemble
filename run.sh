@@ -3,12 +3,12 @@
 case $1 in
     train)
         python src/train.py \
-            --emb_dir $(pwd)/emb/helmet \
+            --emb_dir $(pwd)/emb/lfw \
         ;;
 
     test)
         python src/test.py \
-            --emb_dir $(pwd)/emb/lfw \
+            --emb_dir $(pwd)/emb/camera \
         ;;
     *)
 		echo "illegal argument"
